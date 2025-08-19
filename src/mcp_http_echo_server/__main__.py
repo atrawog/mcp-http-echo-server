@@ -34,7 +34,7 @@ def detect_mode() -> str:
     """Auto-detect the best mode based on environment.
     
     Returns:
-        "stateless" or "stateful"
+        "adaptive", "stateless", or "stateful"
     """
     # Check for serverless/container environments that benefit from stateless
     if any([
@@ -46,8 +46,8 @@ def detect_mode() -> str:
     ]):
         return "stateless"
     
-    # Default to stateful for development
-    return "stateful"
+    # Default to adaptive for maximum flexibility
+    return "adaptive"
 
 
 def setup_logging(debug: bool, log_file: Optional[str] = None):
@@ -83,13 +83,17 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Modes:
-  auto      - Automatically detect based on environment
+  auto      - Automatically detect based on environment (defaults to adaptive)
+  adaptive  - Auto-detect stateful/stateless per request based on client behavior
   stateful  - Full session management and state persistence
   stateless - No session persistence, horizontally scalable
 
 Examples:
-  # Run in auto-detected mode
+  # Run in auto-detected mode (defaults to adaptive)
   mcp-http-echo-server
+  
+  # Run in adaptive mode explicitly
+  mcp-http-echo-server --mode adaptive
   
   # Run in stateless mode for production
   mcp-http-echo-server --mode stateless --port 8080
@@ -128,7 +132,7 @@ Environment Variables:
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument(
         "--mode",
-        choices=["auto", "stateful", "stateless"],
+        choices=["auto", "adaptive", "stateful", "stateless"],
         default=os.getenv("MCP_MODE", "auto"),
         help="Server mode (default: auto, env: MCP_MODE)"
     )
@@ -224,15 +228,23 @@ Environment Variables:
         sys.exit(0)
     
     # Determine mode
+    adaptive_mode = False
     if args.stateless:
         stateless_mode = True
     elif args.stateful:
         stateless_mode = False
     elif args.mode == "auto":
         detected_mode = detect_mode()
-        stateless_mode = detected_mode == "stateless"
+        if detected_mode == "adaptive":
+            adaptive_mode = True
+            stateless_mode = False  # Adaptive starts in stateful mode
+        else:
+            stateless_mode = detected_mode == "stateless"
         if args.debug:
             print(f"Auto-detected mode: {detected_mode}")
+    elif args.mode == "adaptive":
+        adaptive_mode = True
+        stateless_mode = False  # Adaptive starts in stateful mode
     else:
         stateless_mode = args.mode == "stateless"
     
@@ -254,12 +266,15 @@ Environment Variables:
     
     # Print startup information
     print(f"🚀 MCP HTTP Echo Server v1.0.0")
-    print(f"Mode: {'STATELESS' if stateless_mode else 'STATEFUL'}")
+    if adaptive_mode:
+        print(f"Mode: ADAPTIVE (auto-detect per request)")
+    else:
+        print(f"Mode: {'STATELESS' if stateless_mode else 'STATEFUL'}")
     print(f"Transport: {args.transport.upper()}")
     print(f"Address: {args.host}:{args.port}")
     print(f"Debug: {'Enabled' if args.debug else 'Disabled'}")
     print(f"Protocol versions: {', '.join(supported_versions)}")
-    if not stateless_mode:
+    if not stateless_mode or adaptive_mode:
         print(f"Session timeout: {args.session_timeout}s")
     print(f"Tools: 21 comprehensive debugging tools")
     print()
@@ -270,13 +285,18 @@ Environment Variables:
             stateless_mode=stateless_mode,
             session_timeout=args.session_timeout,
             debug=args.debug,
-            supported_versions=supported_versions
+            supported_versions=supported_versions,
+            adaptive_mode=adaptive_mode
         )
         
         # Run server
+        if adaptive_mode:
+            mode_str = "ADAPTIVE"
+        else:
+            mode_str = "STATELESS" if stateless_mode else "STATEFUL"
         logger.info(
             "Starting server in %s mode on %s:%d",
-            "STATELESS" if stateless_mode else "STATEFUL",
+            mode_str,
             args.host,
             args.port
         )

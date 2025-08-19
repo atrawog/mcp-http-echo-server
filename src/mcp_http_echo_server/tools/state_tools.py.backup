@@ -55,24 +55,18 @@ def register_state_tools(mcp: FastMCP, stateless_mode: bool):
         # Get scope prefix
         prefix = StateAdapter.get_scope_prefix(ctx)
         
-        # Use StateAdapter.list_state_keys to get all actual keys
-        all_keys = StateAdapter.list_state_keys(ctx, key_pattern)
-        
-        # Also check known keys as fallback
+        # Note: In real implementation, we would need access to all state keys
+        # For now, we'll check known state keys
         known_keys = [
             "last_echo", "echo_history", "session_history", "state_manipulations",
             "decoded_token", "goat_identified", "request_headers", "request_start_time",
-            "request_id", "session_id", "request_errors", "request_breadcrumbs",
-            "lifecycle_events", "benchmark_test", "test_key", "debug_test", "mykey"
+            "request_id", "session_id", "request_errors", "request_breadcrumbs"
         ]
-        
-        # Combine both lists
-        keys_to_check = list(set(all_keys + known_keys))
         
         total_size = 0
         state_count = 0
         
-        for key in keys_to_check:
+        for key in known_keys:
             # Check if key matches pattern
             if not match_pattern(key, key_pattern):
                 continue

@@ -143,7 +143,6 @@ Available tool categories:
                         # Use fixed mode
                         fc.set_state("stateless_mode", self.server.stateless_mode)
                     
-                    fc.set_state("_session_manager", self.server.session_manager)
                     # Set server config in context
                     fc.set_state("server_debug", self.server.debug)
                     fc.set_state("server_name", self.server.SERVER_NAME)
@@ -180,28 +179,7 @@ Available tool categories:
                             session_id = self.server.session_manager.create_session()
                             if self.server.debug:
                                 logger.debug(f"Created new session: {session_id}")
-                        else:
-                            # Check if session exists
-                            existing_session = self.server.session_manager.get_session(session_id)
-                            if not existing_session:
-                                # Session doesn't exist, create it with the given ID
-                                # This happens when FastMCP creates its own session
-                                if self.server.debug:
-                                    logger.debug(f"Session {session_id} not found, registering in manager")
-                                # Register the session with the provided ID
-                                self.server.session_manager.sessions[session_id] = {
-                                    "id": session_id,
-                                    "created_at": time.time(),
-                                    "last_activity": time.time(),
-                                    "initialized": False,
-                                    "protocol_version": None,
-                                    "client_info": None,
-                                    "request_count": 0,
-                                    "state": {},
-                                    "metadata": {}
-                                }
-                                if self.server.debug:
-                                    logger.debug(f"Registered session: {session_id}")
+                        
                         # Store session ID in context
                         fc.set_state("session_id", session_id)
                         
@@ -211,30 +189,7 @@ Available tool categories:
                             session["last_activity"] = time.time()
                             session["request_count"] = session.get("request_count", 0) + 1
                             
-                            # CRITICAL: Store the complete session data in context for StateAdapter
-                            # This ensures tools can access the persisted state
-                            fc.set_state(f"session_{session_id}_data", session)
-                            
-                            if self.server.debug:
-                                state_count = len(session.get("state", {}))
-                                logger.debug(f"Loaded session {session_id} with {state_count} state keys")
-                        else:
-                            # Session doesn't exist, this shouldn't happen but handle it
-                            if self.server.debug:
-                                logger.warning(f"Session {session_id} not found in manager, creating it")
-                            # Create the session properly
-                            self.server.session_manager.sessions[session_id] = {
-                                "id": session_id,
-                                "created_at": time.time(),
-                                "last_activity": time.time(),
-                                "initialized": False,
-                                "protocol_version": None,
-                                "client_info": None,
-                                "request_count": 1,
-                                "state": {},
-                                "metadata": {}
-                            }
-                            session = self.server.session_manager.sessions[session_id]
+                            # Store session data in context for easy access
                             fc.set_state(f"session_{session_id}_data", session)
                 
                     # Track request in history (for both modes)

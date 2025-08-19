@@ -36,7 +36,7 @@ def register_debug_tools(mcp: FastMCP, stateless_mode: bool):
         Returns:
             Formatted header information
         """
-        headers = ctx.get_state("request_headers", {})
+        headers = (ctx.get_state("request_headers") or {})
         
         result = "HTTP Headers\n" + "=" * 50 + "\n\n"
         
@@ -122,7 +122,7 @@ def register_debug_tools(mcp: FastMCP, stateless_mode: bool):
         Returns:
             Timing metrics dictionary
         """
-        start_time = ctx.get_state("request_start_time", time.time())
+        start_time = (ctx.get_state("request_start_time") or time.time())
         current_time = time.time()
         elapsed = current_time - start_time
         
@@ -152,7 +152,7 @@ def register_debug_tools(mcp: FastMCP, stateless_mode: bool):
         if not ctx.get_state("stateless_mode"):
             session_id = ctx.get_state("session_id")
             if session_id:
-                session_data = ctx.get_state(f"session_{session_id}_data", {})
+                session_data = (ctx.get_state(f"session_{session_id}_data") or {})
                 if session_data and "created_at" in session_data:
                     session_age = current_time - session_data["created_at"]
                     result["session"] = {
@@ -174,7 +174,7 @@ def register_debug_tools(mcp: FastMCP, stateless_mode: bool):
         Returns:
             CORS analysis report
         """
-        headers = ctx.get_state("request_headers", {})
+        headers = (ctx.get_state("request_headers") or {})
         
         result = "CORS Configuration Analysis\n" + "=" * 40 + "\n\n"
         
@@ -266,11 +266,11 @@ def register_debug_tools(mcp: FastMCP, stateless_mode: bool):
         
         # Server configuration from context
         result["server_config"] = {
-            "server_name": ctx.get_state("server_name", "unknown"),
-            "server_version": ctx.get_state("server_version", "unknown"),
-            "debug_mode": ctx.get_state("server_debug", False),
-            "stateless_mode": ctx.get_state("stateless_mode", False),
-            "supported_versions": ctx.get_state("supported_versions", [])
+            "server_name": (ctx.get_state("server_name") or "unknown"),
+            "server_version": (ctx.get_state("server_version") or "unknown"),
+            "debug_mode": (ctx.get_state("server_debug") or False),
+            "stateless_mode": (ctx.get_state("stateless_mode") or False),
+            "supported_versions": (ctx.get_state("supported_versions") or [])
         }
         
         # System information

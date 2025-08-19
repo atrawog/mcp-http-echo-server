@@ -182,7 +182,8 @@ class SessionManager:
                 "initialized_sessions": 0,
                 "average_age_seconds": 0,
                 "average_request_count": 0,
-                "total_queued_messages": 0
+                "total_queued_messages": 0,
+                "session_timeout": self.session_timeout
             }
         
         current_time = time.time()

@@ -181,27 +181,16 @@ Available tool categories:
                             if self.server.debug:
                                 logger.debug(f"Created new session: {session_id}")
                         else:
-                            # Check if session exists
+                            # Check if session exists when coming from header
                             existing_session = self.server.session_manager.get_session(session_id)
                             if not existing_session:
-                                # Session doesn't exist, create it with the given ID
-                                # This happens when FastMCP creates its own session
+                                # Session ID from header doesn't exist, create it
                                 if self.server.debug:
-                                    logger.debug(f"Session {session_id} not found, registering in manager")
-                                # Register the session with the provided ID
-                                self.server.session_manager.sessions[session_id] = {
-                                    "id": session_id,
-                                    "created_at": time.time(),
-                                    "last_activity": time.time(),
-                                    "initialized": False,
-                                    "protocol_version": None,
-                                    "client_info": None,
-                                    "request_count": 0,
-                                    "state": {},
-                                    "metadata": {}
-                                }
+                                    logger.debug(f"Session {session_id} from header not found, creating new session")
+                                # Create a new session (with new ID, don't trust client-provided ID)
+                                session_id = self.server.session_manager.create_session()
                                 if self.server.debug:
-                                    logger.debug(f"Registered session: {session_id}")
+                                    logger.debug(f"Created new session: {session_id}")
                         # Store session ID in context
                         fc.set_state("session_id", session_id)
                         
@@ -211,13 +200,8 @@ Available tool categories:
                             session["last_activity"] = time.time()
                             session["request_count"] = session.get("request_count", 0) + 1
                             
-                            # CRITICAL: Store the complete session data in context for StateAdapter
-                            # This ensures tools can access the persisted state
+                            # Store session data in context for easy access
                             fc.set_state(f"session_{session_id}_data", session)
-                            
-                            if self.server.debug:
-                                state_count = len(session.get("state", {}))
-                                logger.debug(f"Loaded session {session_id} with {state_count} state keys")
                         else:
                             # Session doesn't exist, this shouldn't happen but handle it
                             if self.server.debug:

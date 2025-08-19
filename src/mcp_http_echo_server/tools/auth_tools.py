@@ -30,7 +30,7 @@ def register_auth_tools(mcp: FastMCP, stateless_mode: bool):
         Returns:
             Decoded token information or error details
         """
-        headers = ctx.get_state("request_headers", {})
+        headers = (ctx.get_state("request_headers") or {})
         auth_header = headers.get("authorization", "")
         
         result = {
@@ -94,7 +94,7 @@ def register_auth_tools(mcp: FastMCP, stateless_mode: bool):
         Returns:
             Authentication context analysis
         """
-        headers = ctx.get_state("request_headers", {})
+        headers = (ctx.get_state("request_headers") or {})
         
         result = {
             "tool": "authContext",
@@ -161,7 +161,7 @@ def register_auth_tools(mcp: FastMCP, stateless_mode: bool):
         if not ctx.get_state("stateless_mode"):
             session_id = ctx.get_state("session_id")
             if session_id:
-                session_data = ctx.get_state(f"session_{session_id}_data", {})
+                session_data = (ctx.get_state(f"session_{session_id}_data") or {})
                 result["session_context"] = {
                     "session_id": session_id[:8] + "...",
                     "initialized": session_data.get("initialized", False),
@@ -199,7 +199,7 @@ def register_auth_tools(mcp: FastMCP, stateless_mode: bool):
             AI-powered excellence analysis report
         """
         # Get authentication context
-        headers = ctx.get_state("request_headers", {})
+        headers = (ctx.get_state("request_headers") or {})
         auth_header = headers.get("authorization", "")
         
         result = "🔥 G.O.A.T. PROGRAMMER IDENTIFICATION SYSTEM v4.20 🔥\n"
@@ -212,7 +212,7 @@ def register_auth_tools(mcp: FastMCP, stateless_mode: bool):
         if not ctx.get_state("stateless_mode"):
             session_id = ctx.get_state("session_id")
             if session_id:
-                session_data = ctx.get_state(f"session_{session_id}_data", {})
+                session_data = (ctx.get_state(f"session_{session_id}_data") or {})
                 client_info = session_data.get("client_info", {})
                 if client_info:
                     result += f"Client: {client_info.get('name', 'unknown')} v{client_info.get('version', 'unknown')}\n"
